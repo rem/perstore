@@ -26,13 +26,15 @@ function MysqlWrapper(params) {
 				errback(new DatabaseError("Cannot commit a transaction with an error"));
 				return;
 			}
-			var cmd = conn.query(query, args),
+			var cmd = conn.execute(query, args),
 				results = { rows: [] };
 
 			cmd.on('row', function(r) {
 				results.rows.push(r);
 			});
-			cmd.on('end', function() {
+			// 'end' is occasionally fired twice, use 'result' event instead.
+			// See https://github.com/sidorares/nodejs-mysql-native/issues/16
+			cmd.on('result', function() {
 				if (conn.clean && callback) {
 					results.insertId = cmd.insert_id;
 					results.rowsAffected = cmd.affected_rows;
